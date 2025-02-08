@@ -29,8 +29,7 @@ public class ExceptionAdvice {
     }
 
     @ExceptionHandler(InvalidInputException.class)
-    public ResponseEntity<String> handle(InvalidInputException ex){
-        
+    public ResponseEntity<String> handle(InvalidInputException ex){        
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
     }
 
