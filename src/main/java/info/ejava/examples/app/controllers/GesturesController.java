@@ -87,7 +87,7 @@ public class GesturesController implements  GestureApi {
 
     @RequestMapping(path=GESTURE_PATH,method=RequestMethod.DELETE)
     @Override
-    public ResponseEntity<String> deleteGesture(@PathVariable(name="gestureType")
+    public ResponseEntity<Void> deleteGesture(@PathVariable(name="gestureType")
                                                 String gestureType) {
         
         // business method
@@ -98,7 +98,7 @@ public class GesturesController implements  GestureApi {
 
     @RequestMapping(path=GESTURES_PATH, method= RequestMethod.DELETE)
     @Override
-    public ResponseEntity<String> deleteAllGesture() {
+    public ResponseEntity<Void> deleteAllGesture() {
         // business method
         gestures.deleteAllGesture();
         return ResponseEntity.noContent().build();

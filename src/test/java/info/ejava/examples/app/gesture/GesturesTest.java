@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @ExtendWith(MockitoExtension.class)
 @Slf4j
-public class Gestures_Test {
+public class GesturesTest {
 
     @InjectMocks
     private GesturesController gestureController;
@@ -46,7 +46,7 @@ public class Gestures_Test {
     //private ArgumentCaptor<String> stringArg;
 
     private String currentRequestUrl;
-    private ExceptionAdvice errorAdvice = new ExceptionAdvice();
+    private ExceptionAdvice exceptionAdvice = new ExceptionAdvice();
 
     @BeforeEach
     public void setUp(){
@@ -109,7 +109,7 @@ public class Gestures_Test {
                                 NotFoundException.class);
 
         // then - not found will be returned  
-        ResponseEntity<String> response = errorAdvice.handle(ex);
+        ResponseEntity<String> response = exceptionAdvice.handle(ex);
         then(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         then(response.getBody().toString()).contains("unknown");
         then(response.getHeaders().getFirst(HttpHeaders.CONTENT_LOCATION)).isNull();
@@ -150,7 +150,7 @@ public class Gestures_Test {
     @Test
     public void delete_unknown_gesture(){
         // when - deleting unknown gesture
-        ResponseEntity<String> response = gestureController.deleteGesture("unknown");
+        ResponseEntity<Void> response = gestureController.deleteGesture("unknown");
 
         // then - will receive success with no content
         then(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
@@ -160,7 +160,7 @@ public class Gestures_Test {
     @Test
     public void delete_known_gesture(){
         // when - deleting known gesture
-        ResponseEntity<String> response = gestureController.deleteGesture("hello");
+        ResponseEntity<Void> response = gestureController.deleteGesture("hello");
 
         // then - gestureType will have been remove from map
         BDDMockito.then(gestureService).should(times(1)).deleteGesture("hello");
@@ -172,7 +172,7 @@ public class Gestures_Test {
     @Test
     public void delete_all_gesture(){
         // when 
-        ResponseEntity<String> response = gestureController.deleteAllGesture();
+        ResponseEntity<Void> response = gestureController.deleteAllGesture();
 
         // then - collection was cleared
         BDDMockito.then(gestureService).should(times(1)).deleteAllGesture();

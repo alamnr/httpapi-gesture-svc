@@ -1,5 +1,6 @@
 package info.ejava.examples.app.gesture;
 
+import org.assertj.core.api.Assertions;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +16,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import info.ejava.examples.app.controllers.ExceptionAdvice;
 import info.ejava.examples.app.controllers.GesturesController;
+import info.ejava.examples.app.svc.ClientErrorException;
 import info.ejava.examples.app.svc.GestureService;
+import io.netty.handler.codec.Headers;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -85,6 +88,114 @@ public class GesturesNTest {
         then(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         then(response.getBody()).isEqualTo("howdy");
         then(response.getHeaders().getFirst(HttpHeaders.LOCATION)).isNull();
+    }
+
+    @Test
+    public void get_unknown_gesture_type(){
+        // when - requesting an unknown gesture
+        // NOTE: advice is not being applied to injected controller in this type of test
+
+        ClientErrorException.NotFoundException ex = Assertions.catchThrowableOfType(
+            () -> gesturesController.getGesture("unknown", null),
+            ClientErrorException.NotFoundException.class
+        );
+        // then - not found will be returned
+        ResponseEntity response = exceptionAdvice.handle(ex);
+        //System.out.println(response);
+        then(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        then(response.getBody().toString()).contains("unknown");
+        then(response.getHeaders().getFirst(HttpHeaders.CONTENT_LOCATION)).isNull();
+    }
+
+    @Test
+    public void get_gesture_without_target(){
+        // given - we have a known gesture present
+        ResponseEntity<String> response = gesturesController.upsertGesture("hello","howdy");
+        then(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        // then - get gesture without target
+        response = gesturesController.getGesture("hello", null);
+        then(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        then(response.getBody()).isEqualTo("howdy");
+        then(response.getHeaders().getFirst(HttpHeaders.CONTENT_LOCATION))
+             .isEqualTo(currentRequestUrl);
+
+    }
+
+    @Test
+    public void get_gesture_with_target(){
+        // given - we have known gesture
+        ResponseEntity<String> result = gesturesController.upsertGesture("hello", "howdy");
+        then(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        // when - requesting a known gesture
+        result = gesturesController.getGesture("hello", "jim");
+
+        // then - gesture will be returned with target added
+
+        then(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        then(result.getBody()).isEqualTo("howdy, jim");
+        then(result.getHeaders().getFirst(HttpHeaders.CONTENT_LOCATION))
+                                .isEqualTo(currentRequestUrl);
+    }
+
+    @Test
+    public void delete_unknown_gesture(){
+        // when - deleting unknown gesture
+        ResponseEntity<Void> result = gesturesController.deleteGesture("unknown");
+
+        // then we will receive success with no content
+        then(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    }
+
+    @Test
+    public void delete_known_gesture(){
+
+        // when - we have a known gesture present
+        ResponseEntity<String> response = gesturesController.upsertGesture("hello","hi");
+        then(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        // when -  deleting known gesture
+        ResponseEntity<Void> result = gesturesController.deleteGesture("hello");
+
+        // then - will receive success with no content
+        then(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    }
+
+    @Test
+    public void delete_all_gesture(){
+        // given - upsert some gestures
+        ResponseEntity<String> result = gesturesController.upsertGesture("hello","hi");
+        then(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        then(result.getBody()).isEqualTo(null);
+        then(result.getHeaders().getFirst(HttpHeaders.LOCATION))
+                                .isEqualTo(currentRequestUrl);
+        result = gesturesController.upsertGesture("smile", "face");
+        then(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        then(result.getBody()).isEqualTo(null);
+        then(result.getHeaders().getFirst(HttpHeaders.LOCATION))
+                                .isEqualTo(currentRequestUrl);
+
+        // when - call the delete from controller
+
+        ResponseEntity<Void> deleteResult = gesturesController.deleteAllGesture();
+
+        // then - the request is accepted and returned no content
+
+        then(deleteResult.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        
+        
+        // then - check result returned by exception Advice
+        ClientErrorException.NotFoundException ex = Assertions.catchThrowableOfType(
+            () -> gesturesController.getGesture("smile", null),
+                  ClientErrorException.NotFoundException.class
+        );
+
+        result = exceptionAdvice.handle(ex);
+        then(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        then(result.getBody()).contains("smile");
+        
+
     }
 
 

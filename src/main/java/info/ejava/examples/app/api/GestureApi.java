@@ -16,7 +16,7 @@ public interface GestureApi {
     public ResponseEntity<String> upsertGesture(String gestureType, String gesture);
 
     public ResponseEntity<String> getGesture(String gestureType, String target);
-    public ResponseEntity<String> deleteGesture(String gestureType);
-    public ResponseEntity<String> deleteAllGesture();
+    public ResponseEntity<Void> deleteGesture(String gestureType);
+    public ResponseEntity<Void> deleteAllGesture();
 
 }
