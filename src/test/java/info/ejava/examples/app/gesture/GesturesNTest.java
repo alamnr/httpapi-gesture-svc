@@ -1,5 +1,8 @@
 package info.ejava.examples.app.gesture;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.assertj.core.api.Assertions;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.jupiter.api.BeforeEach;
@@ -193,10 +196,48 @@ public class GesturesNTest {
 
         result = exceptionAdvice.handle(ex);
         then(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        then(result.getBody()).contains("smile");
+        then(result.getBody()).contains("[smile] not found");
         
 
     }
 
+    @Test
+    public void delete_all_gesture_v1(){
+        // given - upsert some gestures
+        List<String> gestureTypes = Arrays.asList("hello","smile");
+        ResponseEntity<String> result;
+        for( String gestureType: gestureTypes){
+            result = gesturesController.upsertGesture(gestureType,"hi-"+gestureType);
+            then(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+            then(result.getBody()).isEqualTo(null);
+            then(result.getHeaders().getFirst(HttpHeaders.LOCATION))
+                                .isEqualTo(currentRequestUrl);
+        }
+         
+        
+        // when - call the delete from controller
+
+        ResponseEntity<Void> deleteResult = gesturesController.deleteAllGesture();
+
+        // then - the request is accepted and returned no content
+
+        then(deleteResult.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        ClientErrorException.NotFoundException ex;
+        for(String gestureType : gestureTypes){ 
+            // then - check result returned by exception Advice
+            ex = Assertions.catchThrowableOfType(
+                () -> gesturesController.getGesture(gestureType, null),
+                    ClientErrorException.NotFoundException.class
+            );
+
+            result = exceptionAdvice.handle(ex);
+            then(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            then(result.getBody()).contains("["+gestureType+"] not found");
+
+        }
+        
+        
+
+    }
 
 }

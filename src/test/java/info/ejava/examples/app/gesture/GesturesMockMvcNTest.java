@@ -1,6 +1,8 @@
 package info.ejava.examples.app.gesture;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import org.junit.jupiter.api.BeforeEach;
@@ -161,6 +163,100 @@ public class GesturesMockMvcNTest {
                 .string(HttpHeaders.CONTENT_LOCATION,url.toString()));
 
         
+    }
+
+    @Test
+    public void get_gesture_with_target() throws Exception {
+        //given - we have a known gesture present
+        URI url = UriComponentsBuilder.fromUri(serverConfig.getBaseUrl())
+                .path(GestureApi.GESTURE_PATH).build("hello");
+
+        mockMvc.perform(post(url)
+                .accept(MediaType.TEXT_PLAIN)
+                .contentType(MediaType.TEXT_PLAIN)
+                .content("howdy"))
+                .andExpect(status().isCreated());
+
+        //when - requesting a known gesture
+        ResultActions response = mockMvc.perform(get(url)
+                .accept(MediaType.TEXT_PLAIN)
+                .queryParam("target","jim"));
+
+        //then - gesture will be returned with target added
+        response.andExpect(status().isOk());
+        response.andExpect(content().string("howdy, jim"));
+        String expectedLocation = UriComponentsBuilder.fromUri(url)
+                .queryParam("target","jim").toUriString();
+        response.andExpect(header()
+                .string(HttpHeaders.CONTENT_LOCATION, expectedLocation));
+
+
+    }
+
+    @Test
+    public void delete_unknown_gesture() throws Exception {
+        //given
+        URI url = UriComponentsBuilder.fromUri(serverConfig.getBaseUrl())
+                .path(GestureApi.GESTURE_PATH).build("unknown");
+
+        //when - deleting unknown gesture
+        ResultActions response = mockMvc.perform(delete(url));
+
+        //then - will receive success with no content
+        response.andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void delete_known_gesture() throws Exception {
+        //given - we have a known gesture present
+        URI url = UriComponentsBuilder.fromUri(serverConfig.getBaseUrl())
+                .path(GestureApi.GESTURE_PATH).build("hello");
+        mockMvc.perform(post(url)
+                .accept(MediaType.TEXT_PLAIN)
+                .contentType(MediaType.TEXT_PLAIN)
+                .content("howdy"))
+                .andExpect(status().isCreated());
+
+        //when - deleting known gesture
+        ResultActions response = mockMvc.perform(delete(url));
+
+        //then - will receive success with no content
+        response.andExpect(status().isNoContent());
+        //and then the gestureType will be unknown
+        mockMvc.perform(get(url)
+                .accept(MediaType.TEXT_PLAIN))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void delete_all_gestures() throws Exception {
+        //given
+        List<String> gestureTypes = Arrays.asList("hello", "goodbye");
+        for (String gestureType : gestureTypes) {
+            URI url = UriComponentsBuilder.fromUri(serverConfig.getBaseUrl())
+                    .path(GestureApi.GESTURE_PATH).build(gestureType);
+            mockMvc.perform(post(url)
+                    .accept(MediaType.TEXT_PLAIN)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .content("aloha"))
+                    .andExpect(status().isCreated());
+        }
+
+        //when deleting all gestures
+        URI url = UriComponentsBuilder.fromUri(serverConfig.getBaseUrl())
+                .pathSegment(GestureApi.GESTURES_PATH).build().toUri();
+        ResultActions response = mockMvc.perform(delete(url));
+
+        //then - collection was cleared
+        response.andExpect(status().isNoContent());
+        //and then no gestures left
+        for (String gestureType : gestureTypes) {
+            url = UriComponentsBuilder.fromUri(serverConfig.getBaseUrl())
+                    .pathSegment(GestureApi.GESTURE_PATH).build(gestureType);
+            mockMvc.perform(get(url)
+                    .accept(MediaType.TEXT_PLAIN))
+                    .andExpect(status().isNotFound());
+        }
     }
 
 
