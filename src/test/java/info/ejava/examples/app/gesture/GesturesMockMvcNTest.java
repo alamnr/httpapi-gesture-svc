@@ -17,6 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -117,6 +118,23 @@ public class GesturesMockMvcNTest {
         response.andExpect(content().string(containsString("hi")));
         response.andExpect(header().doesNotExist(HttpHeaders.LOCATION));
 
+    }
+
+    @Test
+    public void get_unknown_gesture_type() throws Exception {
+
+        // given - unknown gesture
+        URI url = UriComponentsBuilder.fromUri(serverConfig.getBaseUrl())
+                                        .path(GestureApi.GESTURE_PATH).build("unknown");
+
+        // when - requesting an unknown gesture
+        ResultActions response = mockMvc.perform(get(url)
+                                            .accept(MediaType.TEXT_PLAIN)) ;
+                                
+        // then - not found will be returned
+        response.andExpect(status().isNotFound());
+        response.andExpect(content().string(containsString("unknown")));
+        response.andExpect(header().doesNotExist(HttpHeaders.LOCATION));
     }
 
 
