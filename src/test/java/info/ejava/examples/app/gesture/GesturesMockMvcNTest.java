@@ -137,6 +137,32 @@ public class GesturesMockMvcNTest {
         response.andExpect(header().doesNotExist(HttpHeaders.LOCATION));
     }
 
+    @Test
+    public void get_gesture_without_target() throws Exception {
+
+        // given - we have a known gesture present
+        URI url = UriComponentsBuilder.fromUri(serverConfig.getBaseUrl())
+                                        .path(GestureApi.GESTURE_PATH).build("hello");
+
+        mockMvc.perform(post(url)
+                .accept(MediaType.TEXT_PLAIN)
+                .contentType(MediaType.TEXT_PLAIN)
+                .content("howdy"))
+                .andExpect(status().isCreated());
+
+        //when - requesting a known gesture
+        ResultActions response = mockMvc.perform(get(url)
+                .accept(MediaType.TEXT_PLAIN));
+
+        //then - gesture will be returned without target
+        response.andExpect(status().isOk());
+        response.andExpect(content().string("howdy"));
+        response.andExpect(header()
+                .string(HttpHeaders.CONTENT_LOCATION,url.toString()));
+
+        
+    }
+
 
 
 }
