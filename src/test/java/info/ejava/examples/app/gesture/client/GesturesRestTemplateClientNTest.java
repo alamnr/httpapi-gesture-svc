@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /*
  * This class is an example of a unit integration test that uses full http
- * communications and a convenient client command wrapper
+ * communications and a convenient client command wrapper using restTmplate
  * 
  */
 
@@ -60,7 +60,7 @@ public class GesturesRestTemplateClientNTest {
         then(response.getBody()).isNull();
         //System.out.println(response.getHeaders().getFirst(HttpHeaders.LOCATION));
         String url = "http://localhost:"+port+"/"+GestureApi.GESTURE_PATH
-                        .replace("{gestureType} ", gestureType);
+                        .replace("{gestureType}", gestureType);
         then(response.getHeaders().getFirst(HttpHeaders.LOCATION)).isEqualTo(url);
     }
 
